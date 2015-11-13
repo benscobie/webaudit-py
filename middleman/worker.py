@@ -1,13 +1,22 @@
 import _mysql
 
 class Worker:
-    def init(self):
-        db=_mysql.connect(host="localhost",user="root",passwd="",db="college_webaudit")
 
+    def __init__(self):
+        self.db = None
+
+    def __del__(self):
+        self.db.close()
 
     def work(self):
-        db.query("SELECT * FROM scans WHERE scans.`status`= 0");
+        self.db = _mysql.connect(host="localhost",user="root",passwd="",db="college_webaudit")
+        self.db.query("""SELECT * FROM scans WHERE scans.`status`= 0""")
 
-        r=db.use_result();
+        r = self.db.store_result()
+
+        for row in r.fetch_row(maxrows=0):
+            print(row[0])
+
+
 
 
