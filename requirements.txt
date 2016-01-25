@@ -1,1 +1,1 @@
-PyMySQL==0.6.7
+PyMySQL==0.7.1
