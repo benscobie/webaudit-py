@@ -1,16 +1,16 @@
-import abc
+from abc import ABCMeta, abstractmethod
 
-class Test(object):
-    __metaclass__  = abc.ABCMeta
 
-    @abc.abstractmethod
+class WebTest(metaclass=ABCMeta):
+
+    @abstractmethod
     def run(self):
-        """Method that should do something."""
+        pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def status(self):
-        """Method that should do something."""
+        pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def stop(self):
-        """Method that should do something."""
+        pass
