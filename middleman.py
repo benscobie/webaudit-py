@@ -1,15 +1,18 @@
-import db
 import workman
 import configparser
+from database import init_engine
+from database import db_session
+from models import Scan
 import threading
-import pymysql.cursors
 
 class Middleman:
 
     def __init__(self):
         self.config = configparser.ConfigParser()
         self.config.read('config.ini')
-        self.db = db.get_connection()
+
+        init_engine('mysql+pymysql://' + self.config['DATABASE']['Username'] + ':' + self.config['DATABASE']['Password'] + '@' + self.config['DATABASE']['Server'] + '/' + self.config['DATABASE']['Database'], pool_recycle=3600)
+
         self.scan_threads = []
 
     def process_queue(self):
@@ -19,21 +22,16 @@ class Middleman:
 
         self.scan_threads = [t for t in self.scan_threads if not t.handled]
 
-        if len(self.scan_threads) < int(self.config["WEBAUDIT"]["MaxConcurrentScans"]):
-            cursor = self.db.cursor(pymysql.cursors.DictCursor)
+        maxScans = int(self.config["WEBAUDIT"]["MaxConcurrentScans"])
+        currentScans = len(self.scan_threads)
+        slotsAvailable = (maxScans - currentScans)
 
-            try:
-                sql = "SELECT * FROM scans WHERE scans.`status`= 0"
-                cursor.execute(sql)
-                rows = cursor.fetchall()
+        if slotsAvailable > 0:
+            for scan in db_session.query(Scan).order_by(Scan.created_date).limit(slotsAvailable):
+                scan_thread = threading.Thread(target=self.init_scan, args=(scan.website,)).start()
+                self.scan_threads.append(scan_thread)
 
-                for row in rows:
-                    scan_thread = threading.Thread(target=self.init_scan, args=(row["id"], row["url"])).start()
-                    self.scan_threads.append(scan_thread)
 
-            finally:
-                self.db.close()
-
-    def init_scan(self, site_id, site_url):
-        worker = workman.Workman(site_id, site_url)
-        worker.scan();
+    def init_scan(self, website):
+        worker = workman.Workman(website)
+        worker.scan()

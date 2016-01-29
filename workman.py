@@ -1,11 +1,7 @@
-import db
+class Workman(object):
 
-class Workman:
-
-    def __init__(self, site_id, site_url):
-        self.site_id = site_id
-        self.site_url = site_url
-        self.db = db.get_connection()
+    def __init__(self, website):
+        self.website = website
 
     def scan(self):
-        print(self.site_url)
+        print(self.website.url)
