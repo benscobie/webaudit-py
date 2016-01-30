@@ -1,8 +1,8 @@
 import workman
 import configparser
-from database import init_engine
-from database import db_session
+from database import init_engine, db_session
 from models import Scan
+
 import threading
 
 class Middleman:
@@ -12,7 +12,6 @@ class Middleman:
         self.config.read('config.ini')
 
         init_engine('mysql+pymysql://' + self.config['DATABASE']['Username'] + ':' + self.config['DATABASE']['Password'] + '@' + self.config['DATABASE']['Server'] + '/' + self.config['DATABASE']['Database'], pool_recycle=3600)
-
         self.scan_threads = []
 
     def process_queue(self):
@@ -28,10 +27,10 @@ class Middleman:
 
         if slotsAvailable > 0:
             for scan in db_session.query(Scan).order_by(Scan.created_date).limit(slotsAvailable):
-                scan_thread = threading.Thread(target=self.init_scan, args=(scan.website,)).start()
+                scan_thread = threading.Thread(target=self.init_scan, args=(scan,)).start()
                 self.scan_threads.append(scan_thread)
 
 
-    def init_scan(self, website):
-        worker = workman.Workman(website)
-        worker.scan()
+    def init_scan(self, scan):
+        worker = workman.Workman(scan)
+        worker.start_scan()
