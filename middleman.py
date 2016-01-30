@@ -11,7 +11,7 @@ class Middleman:
         self.config = configparser.ConfigParser()
         self.config.read('config.ini')
 
-        init_engine('mysql+pymysql://' + self.config['DATABASE']['Username'] + ':' + self.config['DATABASE']['Password'] + '@' + self.config['DATABASE']['Server'] + '/' + self.config['DATABASE']['Database'], pool_recycle=3600)
+        #init_engine('mysql+pymysql://' + self.config['DATABASE']['Username'] + ':' + self.config['DATABASE']['Password'] + '@' + self.config['DATABASE']['Server'] + '/' + self.config['DATABASE']['Database'], pool_recycle=3600)
         self.scan_threads = []
 
     def process_queue(self):

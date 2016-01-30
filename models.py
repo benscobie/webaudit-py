@@ -24,7 +24,7 @@ class ScanData(Base):
     scan_id = Column(Integer, ForeignKey('scans.id'))
     key = Column(String(255))
     value = Column(String(255))
-    scan_type = Column(Integer)
+    data_type = Column(Integer)
 
 
 class User(Base):
