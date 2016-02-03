@@ -53,3 +53,6 @@ class Website(Base):
     created = Column(DateTime)
 
     scan = relationship("Scan", uselist=False, back_populates="website")
+
+    def get_url(self):
+        return (self.protocol + "://" + self.hostname)

@@ -6,6 +6,6 @@ class Workman(object):
         self.scan = scan
 
     def start_scan(self):
-        print(self.scan.website.url)
+        print(self.scan.website.get_url())
         header = HeaderTest(self.scan)
         header.run()

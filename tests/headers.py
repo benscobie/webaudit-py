@@ -13,7 +13,7 @@ class HeaderTest(WebTest):
         self.scan = scan
 
     def run(self):
-        r = requests.get(self.scan.website.url)
+        r = requests.get(self.scan.website.get_url())
         if r.status_code == requests.codes.ok:
             for header in r.headers:
                 if header in self.match_headers:
