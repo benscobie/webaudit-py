@@ -1,5 +1,5 @@
 from database import Base
-from sqlalchemy import Column, Integer, ForeignKey, DateTime, String
+from sqlalchemy import Column, Integer, ForeignKey, DateTime, String, Boolean
 from sqlalchemy.orm import relationship
 
 
@@ -46,7 +46,9 @@ class Website(Base):
     __tablename__ = 'websites'
 
     id = Column(Integer, primary_key=True)
-    url = Column(String(255))
+    protocol = Column(String(5))
+    hostname = Column(String(64))
+    verified = Column(Boolean(1))
     user_id = Column(Integer, ForeignKey('users.id'))
     created = Column(DateTime)
 
