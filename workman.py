@@ -1,4 +1,6 @@
 from tests.headers import HeaderTest
+from tests.ssl import SSLTest
+
 from database import init_engine, db_session
 from models import Scan
 from datetime import datetime
@@ -14,8 +16,14 @@ class Workman(object):
 
     def start_scan(self):
         print(self.scan.website.get_url())
-        header = HeaderTest(self.scan)
-        header.run()
+
+        header_test = HeaderTest(self.scan)
+        header_test.run()
+
+        if self.scan.website.protocol == "https":
+            ssl_test = SSLTest(self.scan);
+            ssl_test.run()
+
         self.finish_scan()
 
     def finish_scan(self):
