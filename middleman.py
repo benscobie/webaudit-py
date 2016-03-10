@@ -35,10 +35,6 @@ class Middleman:
                 finished_scans.append(key);
 
         for finished_scan in finished_scans:
-            scan = self.scans_in_progress[finished_scan]['scan']
-            scan.finished_date = datetime.utcnow()
-            scan.status = 1
-            db_session.commit()
             self.scans_in_progress.pop(finished_scan, None)
 
     def process_queue(self):
@@ -54,13 +50,14 @@ class Middleman:
         if slots_available > 0:
             for scan in query:
                 print("Scanning scan ID #" + str(scan.id), flush=True)
-                #scan.started_date = datetime.utcnow()
-                #db_session.commit()
-                scan_thread = threading.Thread(target=self.init_scan, args=(scan,))
+                scan_thread = threading.Thread(target=self.init_scan, args=(scan.id,))
                 scan_thread.start()
-                self.scans_in_progress[scan.id] = { 'scan': scan, 'thread': scan_thread }
+                self.scans_in_progress[scan.id] = { 'thread': scan_thread }
+
+        db_session.close()
+
 
     @staticmethod
-    def init_scan(scan):
-        worker = workman.Workman(scan)
+    def init_scan(scan_id):
+        worker = workman.Workman(scan_id)
         worker.start_scan()

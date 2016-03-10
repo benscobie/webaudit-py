@@ -1,11 +1,25 @@
 from tests.headers import HeaderTest
+from database import init_engine, db_session
+from models import Scan
+from datetime import datetime
+
 
 class Workman(object):
 
-    def __init__(self, scan):
-        self.scan = scan
+    def __init__(self, scan_id):
+        # Load scan object inside thread as SQLAlchemy? has issues with passing in objects from other threads
+        self.scan = db_session.query(Scan).get(scan_id)
+        self.scan.started_date = datetime.utcnow()
+        db_session.commit()
 
     def start_scan(self):
         print(self.scan.website.get_url())
         header = HeaderTest(self.scan)
         header.run()
+        self.finish_scan()
+
+    def finish_scan(self):
+        self.scan.finished_date = datetime.utcnow()
+        self.scan.status = 1
+        db_session.commit()
+        return;
