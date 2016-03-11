@@ -7,7 +7,6 @@ import time
 
 
 class SSLTest(WebTest):
-    DATA_TYPE_SSL = 2
     API_ENDPOINT = "https://api.ssllabs.com/api/v2/"
 
     def __init__(self, scan):
@@ -17,46 +16,67 @@ class SSLTest(WebTest):
         db_session.commit()
 
     def run(self):
-        #For testing
-        options = { 'host': self.scan.website.get_url(), 'publish': 'off', 'startNew': 'off', 'fromCache': 'on', 'all': 'done', 'ignoreMismatch': 'on' }
-        #options = { 'host': self.scan.website.get_url(), 'publish': 'off', 'startNew': 'on', 'fromCache': 'off', 'all': 'done', 'ignoreMismatch': 'on' }
+        if not self.api_check():
+            return self.finish(status=3)
+
+        #options = { 'host': self.scan.website.get_url(), 'publish': 'off', 'startNew': 'off', 'fromCache': 'on', 'all': 'done', 'ignoreMismatch': 'on' }
+        options = { 'host': self.scan.website.get_url(), 'publish': 'off', 'startNew': 'on', 'fromCache': 'off', 'all': 'done', 'ignoreMismatch': 'on' }
+
         results = self.api_request(options)
+
+        if results == False:
+            return self.finish(status=3)
+
         options.pop('startNew')
 
-        while results['status'] != 'READY' and results['status'] != 'ERROR':
+        while results == False or (results['status'] != 'READY' and results['status'] != 'ERROR'):
             time.sleep(10)
             results = self.api_request(options)
 
         endpoints = results['endpoints']
-
-        test_data = TestData(test_id=self.test.id, data_type=self.DATA_TYPE_SSL, key="SSL_ENDPOINT_COUNT", value=len(endpoints))
-        db_session.add(test_data)
+        self.add_test_data(key="SSL_ENDPOINT_COUNT", value=len(endpoints))
 
         i = 0
         for endpoint in endpoints:
             i += 1
             grade = endpoint["grade"]
             ip_address = endpoint["ipAddress"]
+            self.add_test_data(key="SSL_ENDPOINT_" + str(i) + "_GRADE", value=grade)
+            self.add_test_data(key="SSL_ENDPOINT_" + str(i) + "_IP", value=ip_address)
 
-            grade_scan_data = TestData(test_id=self.test.id, data_type=self.DATA_TYPE_SSL, key="SSL_ENDPOINT_" + str(i) + "_GRADE", value=grade)
-            ipaddress_scan_data = TestData(test_id=self.test.id, data_type=self.DATA_TYPE_SSL, key="SSL_ENDPOINT_" + str(i) + "_IP", value=ip_address)
-            db_session.add(grade_scan_data)
-            db_session.add(ipaddress_scan_data)
-
-        db_session.commit()
-        self.finish()
+        self.finish(status=2)
 
     def api_request(self, options):
         url = self.API_ENDPOINT + "analyze"
         try:
             response = requests.get(url, params=options)
-        except requests.exception.RequestException as e:
-            print(e)
+        except requests.exception.RequestException:
+            return False
 
         data = response.json()
         return data
 
-    def finish(self):
+    def api_check(self):
+        url = self.API_ENDPOINT + "info"
+        try:
+            response = requests.get(url)
+        except requests.exception.RequestException:
+            return False;
+
+        if response.status_code != requests.codes.ok:
+            return False;
+
+        response = response.json()
+
+        if response.get('maxAssessments') <= 0:
+            return False;
+
+        return True;
+
+    def finish(self, status):
         self.test.finished_date=datetime.utcnow()
-        self.test.status = 2
+        self.test.status = status
         db_session.commit()
+        if status == 3:
+            return False
+        return True

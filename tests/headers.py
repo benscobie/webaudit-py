@@ -24,17 +24,23 @@ class HeaderTest(WebTest):
         db_session.commit()
 
     def run(self):
-        r = requests.get(self.scan.website.get_url())
-        if r.status_code == requests.codes.ok:
-            for header in r.headers:
+        try:
+            response = requests.get(self.scan.website.get_url())
+        except requests.exception.RequestException:
+            return self.finish(status=3)
+
+        if response.status_code == requests.codes.ok:
+            for header in response.headers:
                 if header in self.match_headers:
-                    header_test_data = TestData(test_id=self.test.id, data_type=self.DATA_TYPE_HEADER, key=header, value=r.headers[header])
-                    db_session.add(header_test_data)
-            db_session.commit()
+                    self.add_test_data(key=header, value=response.headers[header])
 
-        self.finish()
+        return self.finish(status=2)
 
-    def finish(self):
+    def finish(self, status):
         self.test.finished_date=datetime.utcnow()
-        self.test.status = 2
+        self.test.status = status
         db_session.commit()
+        if status == 3:
+            return False
+
+        return True
