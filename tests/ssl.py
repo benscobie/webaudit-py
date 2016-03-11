@@ -1,6 +1,7 @@
 from tests.test import WebTest
-from models import ScanData, Scan
+from models import Test, TestData, Scan
 from database import db_session
+from datetime import datetime
 import requests
 import time
 
@@ -11,10 +12,14 @@ class SSLTest(WebTest):
 
     def __init__(self, scan):
         self.scan = scan
+        self.test = Test(scan_id=self.scan.id, name="SSL", status=1, started_date=datetime.utcnow())
+        db_session.add(self.test)
+        db_session.commit()
 
     def run(self):
-        # For testing options = { 'host': self.scan.website.get_url(), 'publish': 'off', 'startNew': 'off', 'fromCache': 'on', 'all': 'done', 'ignoreMismatch': 'on' }
-        options = { 'host': self.scan.website.get_url(), 'publish': 'off', 'startNew': 'on', 'fromCache': 'off', 'all': 'done', 'ignoreMismatch': 'on' }
+        #For testing
+        options = { 'host': self.scan.website.get_url(), 'publish': 'off', 'startNew': 'off', 'fromCache': 'on', 'all': 'done', 'ignoreMismatch': 'on' }
+        #options = { 'host': self.scan.website.get_url(), 'publish': 'off', 'startNew': 'on', 'fromCache': 'off', 'all': 'done', 'ignoreMismatch': 'on' }
         results = self.api_request(options)
         options.pop('startNew')
 
@@ -24,8 +29,8 @@ class SSLTest(WebTest):
 
         endpoints = results['endpoints']
 
-        scan_data = ScanData(scan_id=self.scan.id, data_type=self.DATA_TYPE_SSL, key="SSL_ENDPOINT_COUNT", value=len(endpoints))
-        db_session.add(scan_data)
+        test_data = TestData(test_id=self.test.id, data_type=self.DATA_TYPE_SSL, key="SSL_ENDPOINT_COUNT", value=len(endpoints))
+        db_session.add(test_data)
 
         i = 0
         for endpoint in endpoints:
@@ -33,12 +38,13 @@ class SSLTest(WebTest):
             grade = endpoint["grade"]
             ip_address = endpoint["ipAddress"]
 
-            grade_scan_data = ScanData(scan_id=self.scan.id, data_type=self.DATA_TYPE_SSL, key="SSL_ENDPOINT_" + str(i) + "_GRADE", value=grade)
-            ipaddress_scan_data = ScanData(scan_id=self.scan.id, data_type=self.DATA_TYPE_SSL, key="SSL_ENDPOINT_" + str(i) + "_IP", value=ip_address)
+            grade_scan_data = TestData(test_id=self.test.id, data_type=self.DATA_TYPE_SSL, key="SSL_ENDPOINT_" + str(i) + "_GRADE", value=grade)
+            ipaddress_scan_data = TestData(test_id=self.test.id, data_type=self.DATA_TYPE_SSL, key="SSL_ENDPOINT_" + str(i) + "_IP", value=ip_address)
             db_session.add(grade_scan_data)
             db_session.add(ipaddress_scan_data)
 
         db_session.commit()
+        self.finish()
 
     def api_request(self, options):
         url = self.API_ENDPOINT + "analyze"
@@ -50,9 +56,7 @@ class SSLTest(WebTest):
         data = response.json()
         return data
 
-    def status(self):
-        pass
-
-    def stop(self):
-        pass
-
+    def finish(self):
+        self.test.finished_date=datetime.utcnow()
+        self.test.status = 2
+        db_session.commit()

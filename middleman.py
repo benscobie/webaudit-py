@@ -4,7 +4,6 @@ import time
 import threading
 from database import init_engine, db_session
 from models import Scan
-from datetime import datetime
 
 class Middleman:
 

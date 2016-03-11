@@ -13,15 +13,29 @@ class Scan(Base):
     started_date = Column(DateTime)
     finished_date = Column(DateTime)
 
-    website = relationship("Website", back_populates="scan")
-    scan_data = relationship("ScanData", backref="scan")
+    website = relationship("Website", back_populates="scans")
+    tests = relationship("Test", uselist=False, back_populates="scan")
 
 
-class ScanData(Base):
-    __tablename__ = 'scan_data'
+class Test(Base):
+    __tablename__ = 'tests'
 
     id = Column(Integer, primary_key=True)
     scan_id = Column(Integer, ForeignKey('scans.id'))
+    name = Column(String(50))
+    status = Column(Integer)
+    started_date = Column(DateTime)
+    finished_date = Column(DateTime)
+
+    scan = relationship("Scan", back_populates="tests")
+    test_data = relationship("TestData", backref="test")
+
+
+class TestData(Base):
+    __tablename__ = 'test_data'
+
+    id = Column(Integer, primary_key=True)
+    test_id = Column(Integer, ForeignKey('tests.id'))
     key = Column(String(255))
     value = Column(String(255))
     data_type = Column(Integer)
@@ -52,7 +66,7 @@ class Website(Base):
     user_id = Column(Integer, ForeignKey('users.id'))
     created = Column(DateTime)
 
-    scan = relationship("Scan", uselist=False, back_populates="website")
+    scans = relationship("Scan", uselist=False, back_populates="website")
 
     def get_url(self):
         return (self.protocol + "://" + self.hostname)

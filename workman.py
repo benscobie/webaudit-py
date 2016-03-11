@@ -1,7 +1,7 @@
 from tests.headers import HeaderTest
 from tests.ssl import SSLTest
 
-from database import init_engine, db_session
+from database import db_session
 from models import Scan
 from datetime import datetime
 
