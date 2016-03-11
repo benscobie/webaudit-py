@@ -12,6 +12,7 @@ class Workman(object):
         # Load scan object inside thread as SQLAlchemy? has issues with passing in objects from other threads
         self.scan = db_session.query(Scan).get(scan_id)
         self.scan.started_date = datetime.utcnow()
+        self.scan.status = 1
         db_session.commit()
 
     def start_scan(self):
@@ -28,6 +29,6 @@ class Workman(object):
 
     def finish_scan(self):
         self.scan.finished_date = datetime.utcnow()
-        self.scan.status = 1
+        self.scan.status = 2
         db_session.commit()
-        return;
+        return
