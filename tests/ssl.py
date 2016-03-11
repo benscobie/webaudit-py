@@ -2,12 +2,16 @@ from tests.test import WebTest
 from models import Test, TestData, Scan
 from database import db_session
 from datetime import datetime
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.poolmanager import PoolManager
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+from OpenSSL import SSL
 import requests
-import time
+import certifi
+import ssl
 
 
 class SSLTest(WebTest):
-    API_ENDPOINT = "https://api.ssllabs.com/api/v2/"
 
     def __init__(self, scan):
         self.scan = scan
@@ -16,62 +20,22 @@ class SSLTest(WebTest):
         db_session.commit()
 
     def run(self):
-        if not self.api_check():
-            return self.finish(status=3)
+        valid_ssl_cert = True
 
-        #options = { 'host': self.scan.website.get_url(), 'publish': 'off', 'startNew': 'off', 'fromCache': 'on', 'all': 'done', 'ignoreMismatch': 'on' }
-        options = { 'host': self.scan.website.get_url(), 'publish': 'off', 'startNew': 'on', 'fromCache': 'off', 'all': 'done', 'ignoreMismatch': 'on' }
+        try:
+            requests.get(self.scan.website.get_url(), verify=certifi.where())
+        except requests.exceptions.SSLError:
+            valid_ssl_cert = False
 
-        results = self.api_request(options)
+        self.add_test_data(key="SSL_VALID_CERTIFICATE", value=valid_ssl_cert)
 
-        if results == False:
-            return self.finish(status=3)
-
-        options.pop('startNew')
-
-        while results == False or (results['status'] != 'READY' and results['status'] != 'ERROR'):
-            time.sleep(10)
-            results = self.api_request(options)
-
-        endpoints = results['endpoints']
-        self.add_test_data(key="SSL_ENDPOINT_COUNT", value=len(endpoints))
-
-        i = 0
-        for endpoint in endpoints:
-            i += 1
-            grade = endpoint["grade"]
-            ip_address = endpoint["ipAddress"]
-            self.add_test_data(key="SSL_ENDPOINT_" + str(i) + "_GRADE", value=grade)
-            self.add_test_data(key="SSL_ENDPOINT_" + str(i) + "_IP", value=ip_address)
+        self.ssl_version_check(SSL.SSLv2_METHOD, Ssl2HttpAdapter(), "SSL_SSLV2_ENABLED")
+        self.ssl_version_check(SSL.SSLv3_METHOD, Ssl3HttpAdapter(), "SSL_SSLV3_ENABLED")
+        self.ssl_version_check(SSL.TLSv1_METHOD, Tls1HttpAdapter(), "SSL_TLSV1_ENABLED")
+        self.ssl_version_check(SSL.TLSv1_1_METHOD, Tls11HttpAdapter(), "SSL_TLSV11_ENABLED")
+        self.ssl_version_check(SSL.TLSv1_2_METHOD, Tls12HttpAdapter(), "SSL_TLSV12_ENABLED")
 
         self.finish(status=2)
-
-    def api_request(self, options):
-        url = self.API_ENDPOINT + "analyze"
-        try:
-            response = requests.get(url, params=options)
-        except requests.exception.RequestException:
-            return False
-
-        data = response.json()
-        return data
-
-    def api_check(self):
-        url = self.API_ENDPOINT + "info"
-        try:
-            response = requests.get(url)
-        except requests.exception.RequestException:
-            return False;
-
-        if response.status_code != requests.codes.ok:
-            return False;
-
-        response = response.json()
-
-        if response.get('maxAssessments') <= 0:
-            return False;
-
-        return True;
 
     def finish(self, status):
         self.test.finished_date=datetime.utcnow()
@@ -80,3 +44,56 @@ class SSLTest(WebTest):
         if status == 3:
             return False
         return True
+
+    def ssl_version_check(self, method, adapter, test_data_key):
+        method_enabled = 1
+
+        try:
+            SSL.Context(method=method)
+            requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+            session = requests.Session()
+            session.mount(self.scan.website.get_url(),adapter)
+            try:
+                response = session.get(self.scan.website.get_url(), verify=False)
+            except requests.exceptions.SSLError:
+                method_enabled = 0
+        except ValueError:
+            # OpenSSL method not supported by us (our problem)
+            method_enabled = 2
+
+        self.add_test_data(key=test_data_key, value=method_enabled)
+
+
+class Ssl2HttpAdapter(HTTPAdapter):
+    def init_poolmanager(self, connections, maxsize, block=False):
+        self.poolmanager = PoolManager(
+            num_pools=connections, maxsize=maxsize,
+            block=block, ssl_version=ssl.PROTOCOL_SSLv2)
+
+
+class Ssl3HttpAdapter(HTTPAdapter):
+    def init_poolmanager(self, connections, maxsize, block=False):
+        self.poolmanager = PoolManager(
+            num_pools=connections, maxsize=maxsize,
+            block=block, ssl_version=ssl.PROTOCOL_SSLv3)
+
+
+class Tls1HttpAdapter(HTTPAdapter):
+    def init_poolmanager(self, connections, maxsize, block=False):
+        self.poolmanager = PoolManager(
+            num_pools=connections, maxsize=maxsize,
+            block=block, ssl_version=ssl.PROTOCOL_TLSv1)
+
+
+class Tls11HttpAdapter(HTTPAdapter):
+    def init_poolmanager(self, connections, maxsize, block=False):
+        self.poolmanager = PoolManager(
+            num_pools=connections, maxsize=maxsize,
+            block=block, ssl_version=ssl.PROTOCOL_TLSv1_1)
+
+
+class Tls12HttpAdapter(HTTPAdapter):
+    def init_poolmanager(self, connections, maxsize, block=False):
+        self.poolmanager = PoolManager(
+            num_pools=connections, maxsize=maxsize,
+            block=block, ssl_version=ssl.PROTOCOL_TLSv1_2)

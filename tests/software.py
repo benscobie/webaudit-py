@@ -7,15 +7,6 @@ import requests
 
 class HeaderTest(WebTest):
 
-    match_headers = [
-        'Server',
-        'X-Frame-Options',
-        'Content-Security-Policy',
-        'X-XSS-Protection',
-        'X-Content-Type-Options',
-        'Strict-Transport-Security'
-    ]
-
     def __init__(self, scan):
         self.scan = scan
         self.test = Test(scan_id=self.scan.id, name="HEADERS", status=1, started_date=datetime.utcnow())
