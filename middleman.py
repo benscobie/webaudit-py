@@ -19,7 +19,7 @@ class Middleman:
         while True:
             self.process_queue()
             self.process_running_scans()
-            time.sleep(1)
+            time.sleep(int(self.config["WEBAUDIT"]["ProcessingRestPeriod"]))
 
     def process_running_scans(self):
         current_scans = len(self.scans_in_progress)

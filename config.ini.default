@@ -7,3 +7,4 @@ Database =
 
 [WEBAUDIT]
 MaxConcurrentScans = 5
+ProcessingRestPeriod = 5
