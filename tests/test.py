@@ -5,6 +5,10 @@ from models import TestData
 class WebTest(metaclass=ABCMeta):
 
     @abstractmethod
+    def init(self):
+        pass
+
+    @abstractmethod
     def run(self):
         pass
 

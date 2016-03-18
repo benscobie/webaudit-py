@@ -15,11 +15,17 @@ class SSLTest(WebTest):
 
     def __init__(self, scan):
         self.scan = scan
-        self.test = Test(scan_id=self.scan.id, name="SSL", status=1, started_date=datetime.utcnow())
+
+    def init(self):
+        self.test = Test(scan_id=self.scan.id, name="SSL", status=0)
         db_session.add(self.test)
         db_session.commit()
 
     def run(self):
+        self.test.status = 1
+        self.test.started_date = datetime.utcnow()
+        db_session.commit()
+
         valid_ssl_cert = True
 
         try:
@@ -29,11 +35,11 @@ class SSLTest(WebTest):
 
         self.add_test_data(key="SSL_VALID_CERTIFICATE", value=valid_ssl_cert)
 
-        self.ssl_version_check(SSL.SSLv2_METHOD, Ssl2HttpAdapter(), "SSL_SSLV2_ENABLED")
-        self.ssl_version_check(SSL.SSLv3_METHOD, Ssl3HttpAdapter(), "SSL_SSLV3_ENABLED")
-        self.ssl_version_check(SSL.TLSv1_METHOD, Tls1HttpAdapter(), "SSL_TLSV1_ENABLED")
-        self.ssl_version_check(SSL.TLSv1_1_METHOD, Tls11HttpAdapter(), "SSL_TLSV11_ENABLED")
-        self.ssl_version_check(SSL.TLSv1_2_METHOD, Tls12HttpAdapter(), "SSL_TLSV12_ENABLED")
+        self._ssl_version_check(SSL.SSLv2_METHOD, Ssl2HttpAdapter(), "SSL_SSLV2_ENABLED")
+        self._ssl_version_check(SSL.SSLv3_METHOD, Ssl3HttpAdapter(), "SSL_SSLV3_ENABLED")
+        self._ssl_version_check(SSL.TLSv1_METHOD, Tls1HttpAdapter(), "SSL_TLSV1_ENABLED")
+        self._ssl_version_check(SSL.TLSv1_1_METHOD, Tls11HttpAdapter(), "SSL_TLSV11_ENABLED")
+        self._ssl_version_check(SSL.TLSv1_2_METHOD, Tls12HttpAdapter(), "SSL_TLSV12_ENABLED")
 
         self.finish(status=2)
 
@@ -45,7 +51,7 @@ class SSLTest(WebTest):
             return False
         return True
 
-    def ssl_version_check(self, method, adapter, test_data_key):
+    def _ssl_version_check(self, method, adapter, test_data_key):
         method_enabled = 1
 
         try:
@@ -58,7 +64,7 @@ class SSLTest(WebTest):
             except requests.exceptions.SSLError:
                 method_enabled = 0
         except ValueError:
-            # OpenSSL method not supported by us (our problem)
+            # OpenSSL method not available (our problem)
             method_enabled = 2
 
         self.add_test_data(key=test_data_key, value=method_enabled)

@@ -18,11 +18,17 @@ class HeaderTest(WebTest):
 
     def __init__(self, scan):
         self.scan = scan
-        self.test = Test(scan_id=self.scan.id, name="HEADERS", status=1, started_date=datetime.utcnow())
+
+    def init(self):
+        self.test = Test(scan_id=self.scan.id, name="HEADERS", status=0)
         db_session.add(self.test)
         db_session.commit()
 
     def run(self):
+        self.test.status = 1
+        self.test.started_date = datetime.utcnow()
+        db_session.commit()
+
         try:
             response = requests.get(self.scan.website.get_url())
         except requests.exception.RequestException:

@@ -20,7 +20,7 @@ class SSLAPITest(WebTest):
             return self.finish(status=3)
 
         #options = { 'host': self.scan.website.get_url(), 'publish': 'off', 'startNew': 'off', 'fromCache': 'on', 'all': 'done', 'ignoreMismatch': 'on' }
-        options = { 'host': self.scan.website.get_url(), 'publish': 'off', 'startNew': 'on', 'fromCache': 'off', 'all': 'done', 'ignoreMismatch': 'on' }
+        options = {'host': self.scan.website.get_url(), 'publish': 'off', 'startNew': 'on', 'fromCache': 'off', 'all': 'done', 'ignoreMismatch': 'on'}
 
         results = self.api_request(options)
 
