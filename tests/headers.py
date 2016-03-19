@@ -8,12 +8,12 @@ import requests
 class HeaderTest(WebTest):
 
     match_headers = [
-        'Server',
-        'X-Frame-Options',
-        'Content-Security-Policy',
-        'X-XSS-Protection',
-        'X-Content-Type-Options',
-        'Strict-Transport-Security'
+        'server',
+        'x-frame-options',
+        'content-security-policy',
+        'x-xss-protection',
+        'x-content-type-options',
+        'strict-transport-security'
     ]
 
     def __init__(self, scan):
@@ -36,7 +36,7 @@ class HeaderTest(WebTest):
 
         if response.status_code == requests.codes.ok:
             for header in response.headers:
-                if header in self.match_headers:
+                if header.lower() in self.match_headers:
                     self.add_test_data(key=header, value=response.headers[header])
 
         return self.finish(status=2)
