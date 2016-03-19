@@ -12,6 +12,12 @@ class WebTest(metaclass=ABCMeta):
     def run(self):
         pass
 
-    def add_test_data(self, key, value, data_type=None):
-        test_data = TestData(test_id=self.test.id, key=key, value=value, data_type=data_type)
-        db_session.add(test_data)
+    def add_test_data(self, key=None, value=None, data_type=None, kvdata=None):
+        if key is not None and value is not None:
+            test_data = TestData(test_id=self.test.id, key=key, value=value, data_type=data_type)
+            db_session.add(test_data)
+
+        if kvdata is not None:
+            for key, value in kvdata.items():
+                test_data = TestData(test_id=self.test.id, key=key, value=value)
+                db_session.add(test_data)

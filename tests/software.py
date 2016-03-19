@@ -1,5 +1,5 @@
 from tests.test import WebTest
-from models import Test, TestData, Scan
+from models import Test
 from database import db_session
 from datetime import datetime
 from lxml import html
