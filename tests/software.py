@@ -22,8 +22,8 @@ class SoftwareTest(WebTest):
         db_session.commit()
 
         try:
-            response = requests.get(self.scan.website.get_url())
-        except requests.exception.RequestException:
+            response = requests.get(self.scan.website.get_url(), verify=False)
+        except requests.exceptions.RequestException:
             return self.finish(status=3)
 
         tree = html.fromstring(response.content)
