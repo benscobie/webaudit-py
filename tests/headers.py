@@ -30,7 +30,7 @@ class HeaderTest(WebTest):
         db_session.commit()
 
         try:
-            response = requests.get(self.scan.website.get_url(), verify=False)
+            response = requests.get(self.scan.website.get_url(), verify=False, timeout=30)
         except requests.exceptions.RequestException:
             return self.finish(status=3)
 

@@ -4,8 +4,7 @@ from database import db_session
 from datetime import datetime
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.poolmanager import PoolManager
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-import OpenSSL
+from OpenSSL import SSL, crypto
 import requests
 import certifi
 import ssl
@@ -29,7 +28,7 @@ class SSLTest(WebTest):
         valid_ssl_cert = True
 
         try:
-            requests.get(self.scan.website.get_url(), verify=certifi.where())
+            requests.get(self.scan.website.get_url(), verify=certifi.where(), timeout=30)
         except requests.exceptions.SSLError:
             valid_ssl_cert = False
         except requests.exceptions.RequestException:
@@ -38,20 +37,20 @@ class SSLTest(WebTest):
         self.add_test_data(key="VALID_CERTIFICATE", value=valid_ssl_cert)
 
         usable_best_protocol = ssl.PROTOCOL_SSLv3
-        if self._ssl_version_check(OpenSSL.SSL.SSLv2_METHOD, Ssl2HttpAdapter(), "SSLV2_ENABLED"):
+        if self._ssl_version_check(SSL.SSLv2_METHOD, Ssl2HttpAdapter(), "SSLV2_ENABLED"):
             usable_best_protocol = ssl.PROTOCOL_SSLv2
-        if self._ssl_version_check(OpenSSL.SSL.SSLv3_METHOD, Ssl3HttpAdapter(), "SSLV3_ENABLED"):
+        if self._ssl_version_check(SSL.SSLv3_METHOD, Ssl3HttpAdapter(), "SSLV3_ENABLED"):
             usable_best_protocol = ssl.PROTOCOL_SSLv3
-        if self._ssl_version_check(OpenSSL.SSL.TLSv1_METHOD, Tls1HttpAdapter(), "TLSV1_ENABLED"):
+        if self._ssl_version_check(SSL.TLSv1_METHOD, Tls1HttpAdapter(), "TLSV1_ENABLED"):
             usable_best_protocol = ssl.PROTOCOL_TLSv1
-        if self._ssl_version_check(OpenSSL.SSL.TLSv1_1_METHOD, Tls11HttpAdapter(), "TLSV11_ENABLED"):
+        if self._ssl_version_check(SSL.TLSv1_1_METHOD, Tls11HttpAdapter(), "TLSV11_ENABLED"):
             usable_best_protocol = ssl.PROTOCOL_TLSv1_1
-        if self._ssl_version_check(OpenSSL.SSL.TLSv1_2_METHOD, Tls12HttpAdapter(), "TLSV12_ENABLED"):
+        if self._ssl_version_check(SSL.TLSv1_2_METHOD, Tls12HttpAdapter(), "TLSV12_ENABLED"):
             usable_best_protocol = ssl.PROTOCOL_TLSv1_2
 
         try:
-            cert = ssl.get_server_certificate((self.scan.website.hostname, 443),ssl_version=usable_best_protocol)
-            x509 = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, cert)
+            cert = ssl.get_server_certificate((self.scan.website.hostname, 443), ssl_version=usable_best_protocol)
+            x509 = crypto.load_certificate(crypto.FILETYPE_PEM, cert)
 
             algo = x509.get_signature_algorithm().decode('ascii')
             strength = x509.get_pubkey().bits()
@@ -77,7 +76,7 @@ class SSLTest(WebTest):
         self.finish(status=2)
 
     def finish(self, status):
-        self.test.finished_date=datetime.utcnow()
+        self.test.finished_date = datetime.utcnow()
         self.test.status = status
         db_session.commit()
         if status == 3:
@@ -88,12 +87,11 @@ class SSLTest(WebTest):
         method_enabled = 1
 
         try:
-            OpenSSL.SSL.Context(method=method)
-            requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+            SSL.Context(method=method)
             session = requests.Session()
             session.mount(self.scan.website.get_url(),adapter)
             try:
-                response = session.get(self.scan.website.get_url(), verify=False)
+                response = session.get(self.scan.website.get_url(), verify=False, timeout=30)
             except requests.exceptions.SSLError:
                 method_enabled = 0
             except requests.exceptions.RequestException:

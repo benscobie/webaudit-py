@@ -4,7 +4,8 @@ from tests.software import SoftwareTest
 from database import db_session
 from models import Scan
 from datetime import datetime
-
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+import requests
 
 class Workman(object):
 
@@ -17,6 +18,7 @@ class Workman(object):
 
     def start_scan(self):
         print(self.scan.website.get_url())
+        requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
         header_test = HeaderTest(self.scan)
         #software_test = SoftwareTest(self.scan)
