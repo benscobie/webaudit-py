@@ -31,7 +31,7 @@ class HeaderTest(WebTest):
 
         try:
             response = requests.get(self.scan.website.get_url())
-        except requests.exception.RequestException:
+        except requests.exceptions.RequestException:
             return self.finish(status=3)
 
         if response.status_code == requests.codes.ok:

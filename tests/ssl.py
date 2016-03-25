@@ -32,6 +32,8 @@ class SSLTest(WebTest):
             requests.get(self.scan.website.get_url(), verify=certifi.where())
         except requests.exceptions.SSLError:
             valid_ssl_cert = False
+        except requests.exceptions.RequestException:
+            return self.finish(status=3)
 
         self.add_test_data(key="VALID_CERTIFICATE", value=valid_ssl_cert)
 
@@ -94,6 +96,8 @@ class SSLTest(WebTest):
                 response = session.get(self.scan.website.get_url(), verify=False)
             except requests.exceptions.SSLError:
                 method_enabled = 0
+            except requests.exceptions.RequestException:
+                method_enabled = 2
         except ValueError:
             # OpenSSL method not available (our problem)
             method_enabled = 2
