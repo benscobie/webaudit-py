@@ -11,4 +11,4 @@ This repository contains the Python application that was produced. This was my f
 
 # Website component
 
-The repository for the web component can be found at here: https://github.com/benscobie/webaudit-website
+The repository for the web component can be found here: https://github.com/benscobie/webaudit-website
